@@ -5,7 +5,7 @@ from scipy.spatial import distance as dist
 
 img_color = cv.imread("A1.jpg")
 img_eg = cv.Canny(img_color, 100 ,200)
-blur = cv.bilateralFilter(img_color,9,75,75)
+blur = cv.bilateralFilter(img_color,9,100,100)
 img_gray = cv.cvtColor(blur, cv.COLOR_BGR2GRAY)
 ret, img_binary = cv.threshold(img_gray, 163, 255, cv.THRESH_BINARY)
 img_binary = cv.bitwise_not(img_binary)
@@ -52,8 +52,8 @@ def label(image, contour):
    return colorNames[minDist[1]]
 
 # 인식할 색 입력
-colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255]]
-colorNames = ["red", "green", "blue"]
+colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255],[129,193,71],[255,212,0],[255,255,255],[255,51,153],[150,75,0],[0,86,102],[255,0,255],[139,0,255],[0,0,0],[0,0,128]]
+colorNames = ["red", "green", "blue","light green","yellow","white","pink","brown","green blue","magenta","purple","black","dark blue"]
 
 lab = numpy.zeros((len(colors), 1, 3), dtype="uint8")
 for i in range(len(colors)):
@@ -77,9 +77,42 @@ for contour in contours:
    cv.drawContours(img_color, [contour], -1, (0, 255, 0), 2)
 
    # 컨투어 내부에 검출된 색을 표시
-   color_text = label(img_lab, contour)
+   color_text = label(img_color, contour)
    setLabel(img_color, color_text, contour)
 
+for cnt in contours:
+   
+    epsilon = 0.005 * cv.arcLength(cnt, True)
+    approx = cv.approxPolyDP(cnt, epsilon, True)
 
-cv.imshow("result",img_color)
+    size = len(approx)
+    print(size)
+
+    cv.line(img_color, tuple(approx[0][0]), tuple(approx[size-1][0]), (0, 255, 0), 3)
+    for k in range(size-1):
+        cv.line(img_color, tuple(approx[k][0]), tuple(approx[k+1][0]), (0, 255, 0), 3)
+
+    if cv.isContourConvex(approx):
+        if size == 3:
+            setLabel(img_color, "triangle", cnt)
+        elif size == 4:
+            setLabel(img_color, "rectangle", cnt)
+        elif size == 5:
+            setLabel(img_color, "pentagon", cnt)
+        elif size == 6:
+            setLabel(img_color, "hexagon", cnt)
+        elif size == 8:
+            setLabel(img_color, "octagon", cnt)
+        elif size == 10:
+            setLabel(img_color, "decagon", cnt)
+        else:
+            setLabel(img_color, str(size), cnt)
+    else:
+        setLabel(img_color, str(size), cnt)
+
+
+re1 = cv.resize(img_color,dsize=(1920,1080))
+re2 = cv.resize(blur,dsize=(1920,1080))
+cv.imshow("result",re1)
+cv.imshow("blur",re2)
 cv.waitKey(0)
