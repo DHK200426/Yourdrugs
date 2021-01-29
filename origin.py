@@ -9,7 +9,7 @@ try:
 except ImportError:
     import Image
 
-img_color = cv.imread("A2.jpg")
+img_color = cv.imread("B2.jpg")
 img_eg = cv.Canny(img_color, 100 ,200)
 blur = cv.bilateralFilter(img_color,9,100,100)
 fure_img_gray = cv.cvtColor(img_color, cv.COLOR_BGR2GRAY)
@@ -17,7 +17,7 @@ ret, fure_img_binary = cv.threshold(fure_img_gray, 163, 255, cv.THRESH_BINARY)
 img_gray = cv.cvtColor(blur, cv.COLOR_BGR2GRAY)
 ret, img_binary = cv.threshold(img_gray, 163, 255, cv.THRESH_BINARY)
 img_binary = cv.bitwise_not(img_binary)
-contours,hierarchy = cv.findContours(img_binary, cv.RETR_LIST, cv.CHAIN_APPROX_TC89_KCOS)
+contours,hierarchy = cv.findContours(img_binary, cv.RETR_TREE, cv.CHAIN_APPROX_TC89_KCOS)
 filename = "{}.png".format(os.getpid()) 
 cv.imwrite(filename, fure_img_binary)
 
@@ -34,7 +34,7 @@ for i in range(len(contours)):
     area = cv.contourArea(cnt)
     if (area > max_area):
         max_area = area
-        ci = i # contour에서의 배열 번호를 차례대로 저장한다.
+        ci = i  # contour에서의 배열 번호를 차례대로 저장한다.
 
 cnt = contours[ci] #위에서 가장 큰 영역으로 뽑힌 부분을 cnt에 저장한다.
 
@@ -96,38 +96,55 @@ elif len(contours) == 3:
    contours = contours[1]
 
 
-color_text = label(img_color, cnt)
-setLabel(img_color, color_text, cnt)
+# 컨투어 별로 체크
+for contour in contours:
+   # 컨투어를 그림
+   cv.drawContours(img_color, [contour], -1, (0, 255, 0), 2)
 
+   # 컨투어 내부에 검출된 색을 표시
+   color_text = label(img_color, contour)
+   setLabel(img_color, color_text, contour)
 
+max_area = 0;
+ci = 0
+for i in range(len(contours)):
+    cnt = contours[i]
+    area = cv.contourArea(cnt)
+    if (area > max_area):
+        max_area = area
+        ci = i  # contour에서의 배열 번호를 차례대로 저장한다.
 
-epsilon = 0.005 * cv.arcLength(cnt, True)
-approx = cv.approxPolyDP(cnt, epsilon, True)
+cnt = contours[ci] #위에서 가장 큰 영역으로 뽑힌 부분을 cnt에 저장한다.
 
-size = len(approx)
-print(size)
+for cnt in contours:
 
-cv.line(img_color, tuple(approx[0][0]), tuple(approx[size-1][0]), (0, 255, 0), 3)
-for k in range(size-1):
-    cv.line(img_color, tuple(approx[k][0]), tuple(approx[k+1][0]), (0, 255, 0), 3)
+    epsilon = 0.005 * cv.arcLength(cnt, True)
+    approx = cv.approxPolyDP(cnt, epsilon, True)
 
-if cv.isContourConvex(approx):
-    if size == 3:
-        setLabel(img_color, "triangle", cnt)
-    elif size == 4:
-        setLabel(img_color, "rectangle", cnt)
-    elif size == 5:
-        setLabel(img_color, "pentagon", cnt)
-    elif size == 6:
-        setLabel(img_color, "hexagon", cnt)
-    elif size == 8:
-        setLabel(img_color, "octagon", cnt)
-    elif size == 10:
-        setLabel(img_color, "decagon", cnt)
+    size = len(approx)
+    print(size)
+
+    cv.line(img_color, tuple(approx[0][0]), tuple(approx[size-1][0]), (0, 255, 0), 3)
+    for k in range(size-1):
+        cv.line(img_color, tuple(approx[k][0]), tuple(approx[k+1][0]), (0, 255, 0), 3)
+
+    if cv.isContourConvex(approx):
+        if size == 3:
+            setLabel(img_color, "triangle", cnt)
+        elif size == 4:
+            setLabel(img_color, "rectangle", cnt)
+        elif size == 5:
+            setLabel(img_color, "pentagon", cnt)
+        elif size == 6:
+            setLabel(img_color, "hexagon", cnt)
+        elif size == 8:
+            setLabel(img_color, "octagon", cnt)
+        elif size == 10:
+            setLabel(img_color, "decagon", cnt)
+        else:
+            setLabel(img_color, "circle", cnt)
     else:
         setLabel(img_color, "circle", cnt)
-else:
-    setLabel(img_color, "circle", cnt)
 
 text = pytesseract.image_to_string(Image.open(filename), lang=None) 
 os.remove(filename) 
